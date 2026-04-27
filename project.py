@@ -119,11 +119,24 @@ for i in range(num_runs):
     criterion = nn.CrossEntropyLoss()
 
     # ── Baseline ──────────────────────────────────────────────────────────────
-    baseline_model = BaselineCIFAR(
-        in_channels=cfg["in_channels"],
-        num_classes=cfg["num_classes"],
-        img_size=cfg["img_size"],
-    ).to(device)
+    if DATASET == "MNIST":
+        baseline_model = BaselineCNN(
+            in_channels=cfg["in_channels"],
+            num_classes=cfg["num_classes"],
+            img_size=cfg["img_size"],
+        ).to(device)
+    elif DATASET == "CIFAR10":
+        baseline_model = BaselineCIFAR(
+            in_channels=cfg["in_channels"],
+            num_classes=cfg["num_classes"],
+            img_size=cfg["img_size"],
+        ).to(device)
+    else:
+        baseline_model = BaselineSTL(
+            in_channels=cfg["in_channels"],
+            num_classes=cfg["num_classes"],
+            img_size=cfg["img_size"],
+        ).to(device)
 
     if DATASET == "MNIST":
         optimizer = optim.Adam(baseline_model.parameters(), lr=0.0005)
