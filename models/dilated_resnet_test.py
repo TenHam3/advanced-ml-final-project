@@ -15,7 +15,12 @@ class _MultiDilatedConv(nn.Module):
         self.dilations = dilations
         self.kernel_size = kernel_size
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, bias=False)
-        self.alpha = nn.Parameter(torch.zeros(out_channels, len(dilations)))
+        # Init first alpha to 2.0 so softmax starts ~[0.84, 0.08, 0.08] — close to
+        # standard conv behavior. The model learns to activate larger dilations when useful
+        # rather than averaging noisy dilation outputs from the first step.
+        init = torch.zeros(out_channels, len(dilations))
+        init[:, 0] = 2.0
+        self.alpha = nn.Parameter(init)
 
     def forward(self, x):
         outputs = [

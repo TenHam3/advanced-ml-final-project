@@ -104,7 +104,7 @@ def get_loaders(cfg):
 
 batch_size = 50 if DATASET != "MNIST" else 10
 num_runs = 5
-num_epochs = 20 if DATASET != "MNIST" else 10
+num_epochs = 50 if DATASET != "MNIST" else 10
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
