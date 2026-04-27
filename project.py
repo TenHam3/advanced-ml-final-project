@@ -20,6 +20,8 @@ from models.baseline_cifar import BaselineCIFAR
 from models.baseline_stl import BaselineSTL
 from models.test_cnn import TestCNN
 from models.independent_cnn import IndependentCNN
+from models.dilated_resnet_test import DilatedResNetTest
+from models.dilated_resnet_independent import DilatedResNetIndependent
 
 import time
 
@@ -100,9 +102,9 @@ def get_loaders(cfg):
     test_loader = DataLoader(dataset=Subset(test_dataset, list(range(cfg["test_subset"]))), batch_size=batch_size, shuffle=False)
     return train_loader, test_loader
 
-batch_size = 50
+batch_size = 50 if DATASET != "MNIST" else 10
 num_runs = 5
-num_epochs = 20
+num_epochs = 20 if DATASET != "MNIST" else 10
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -167,96 +169,130 @@ for i in range(num_runs):
     print(f"Baseline train time: {end - start:.3f}")
     baseline_accuracies.append(test_accuracy)
 
-    # ── TestCNN ───────────────────────────────────────────────────────────────
-    # dilated_model = TestCNN(
-    #     in_channels=cfg["in_channels"],
-    #     num_classes=cfg["num_classes"],
-    #     img_size=cfg["img_size"],
-    # ).to(device)
+    # ── TestCNN / DilatedResNetTest ───────────────────────────────────────────
+    if DATASET == "MNIST":
+        dilated_model = TestCNN(
+            in_channels=cfg["in_channels"],
+            num_classes=cfg["num_classes"],
+            img_size=cfg["img_size"],
+        ).to(device)
+    else:
+        dilated_model = DilatedResNetTest(
+            in_channels=cfg["in_channels"],
+            num_classes=cfg["num_classes"],
+            img_size=cfg["img_size"],
+        ).to(device)
 
-    # optimizer = optim.Adam(dilated_model.parameters(), lr=0.0005)
+    if DATASET == "MNIST":
+        optimizer = optim.Adam(dilated_model.parameters(), lr=0.0005)
+        scheduler = None
+    else:
+        optimizer = optim.Adam(dilated_model.parameters(), lr=0.001)
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
-    # start = time.perf_counter()
-    # for epoch in range(num_epochs):
-    #     print(f"Epoch [{epoch + 1}/{num_epochs}]")
-    #     for batch_index, (data, targets) in enumerate(tqdm(train_loader)):
-    #         data = data.to(device)
-    #         targets = targets.to(device)
-    #         scores = dilated_model(data)
-    #         loss = criterion(scores, targets)
-    #         optimizer.zero_grad()
-    #         loss.backward()
-    #         optimizer.step()
-    # end = time.perf_counter()
-    # dilated_times.append(end - start)
+    start = time.perf_counter()
+    for epoch in range(num_epochs):
+        dilated_model.train()
+        print(f"Epoch [{epoch + 1}/{num_epochs}]")
+        for batch_index, (data, targets) in enumerate(tqdm(train_loader)):
+            data = data.to(device)
+            targets = targets.to(device)
+            scores = dilated_model(data)
+            loss = criterion(scores, targets)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        if scheduler is not None:
+            scheduler.step()
+    end = time.perf_counter()
+    dilated_times.append(end - start)
 
-    # acc = Accuracy(task="multiclass", num_classes=cfg["num_classes"])
-    # precision = Precision(task="multiclass", average='macro', num_classes=cfg["num_classes"])
-    # recall = Recall(task="multiclass", average='macro', num_classes=cfg["num_classes"])
+    acc = Accuracy(task="multiclass", num_classes=cfg["num_classes"]).to(device)
+    precision = Precision(task="multiclass", average='macro', num_classes=cfg["num_classes"]).to(device)
+    recall = Recall(task="multiclass", average='macro', num_classes=cfg["num_classes"]).to(device)
 
-    # dilated_model.eval()
-    # with torch.no_grad():
-    #     for images, labels in test_loader:
-    #         outputs = dilated_model(images)
-    #         _, preds = torch.max(outputs, 1)
-    #         acc(preds, labels)
-    #         precision(preds, labels)
-    #         recall(preds, labels)
+    dilated_model.eval()
+    with torch.no_grad():
+        for images, labels in test_loader:
+            images = images.to(device)
+            labels = labels.to(device)
+            outputs = dilated_model(images)
+            _, preds = torch.max(outputs, 1)
+            acc(preds, labels)
+            precision(preds, labels)
+            recall(preds, labels)
 
-    # test_accuracy = acc.compute()
-    # print(f"TestCNN test accuracy: {test_accuracy}")
-    # print(f"Baseline train time: {end - start:.3f}")
-    # dilated_accuracies.append(test_accuracy)
+    test_accuracy = acc.compute()
+    print(f"TestCNN test accuracy: {test_accuracy}")
+    print(f"TestCNN train time: {end - start:.3f}")
+    dilated_accuracies.append(test_accuracy)
 
-    # # ── IndependentCNN ────────────────────────────────────────────────────────
-    # ind_model = IndependentCNN(
-    #     in_channels=cfg["in_channels"],
-    #     num_classes=cfg["num_classes"],
-    #     img_size=cfg["img_size"],
-    # ).to(device)
+    # ── IndependentCNN / DilatedResNetIndependent ─────────────────────────────
+    if DATASET == "MNIST":
+        ind_model = IndependentCNN(
+            in_channels=cfg["in_channels"],
+            num_classes=cfg["num_classes"],
+            img_size=cfg["img_size"],
+        ).to(device)
+    else:
+        ind_model = DilatedResNetIndependent(
+            in_channels=cfg["in_channels"],
+            num_classes=cfg["num_classes"],
+            img_size=cfg["img_size"],
+        ).to(device)
 
-    # optimizer = optim.Adam(ind_model.parameters(), lr=0.0005)
+    if DATASET == "MNIST":
+        optimizer = optim.Adam(ind_model.parameters(), lr=0.0005)
+        scheduler = None
+    else:
+        optimizer = optim.Adam(ind_model.parameters(), lr=0.001)
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
-    # start = time.perf_counter()
-    # for epoch in range(num_epochs):
-    #     print(f"Epoch [{epoch + 1}/{num_epochs}]")
-    #     for batch_index, (data, targets) in enumerate(tqdm(train_loader)):
-    #         data = data.to(device)
-    #         targets = targets.to(device)
-    #         scores = ind_model(data)
-    #         loss = criterion(scores, targets)
-    #         optimizer.zero_grad()
-    #         loss.backward()
-    #         optimizer.step()
-    # end = time.perf_counter()
-    # ind_times.append(end - start)
+    start = time.perf_counter()
+    for epoch in range(num_epochs):
+        ind_model.train()
+        print(f"Epoch [{epoch + 1}/{num_epochs}]")
+        for batch_index, (data, targets) in enumerate(tqdm(train_loader)):
+            data = data.to(device)
+            targets = targets.to(device)
+            scores = ind_model(data)
+            loss = criterion(scores, targets)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        if scheduler is not None:
+            scheduler.step()
+    end = time.perf_counter()
+    ind_times.append(end - start)
 
-    # acc = Accuracy(task="multiclass", num_classes=cfg["num_classes"])
-    # precision = Precision(task="multiclass", average='macro', num_classes=cfg["num_classes"])
-    # recall = Recall(task="multiclass", average='macro', num_classes=cfg["num_classes"])
+    acc = Accuracy(task="multiclass", num_classes=cfg["num_classes"]).to(device)
+    precision = Precision(task="multiclass", average='macro', num_classes=cfg["num_classes"]).to(device)
+    recall = Recall(task="multiclass", average='macro', num_classes=cfg["num_classes"]).to(device)
 
-    # ind_model.eval()
-    # with torch.no_grad():
-    #     for images, labels in test_loader:
-    #         outputs = ind_model(images)
-    #         _, preds = torch.max(outputs, 1)
-    #         acc(preds, labels)
-    #         precision(preds, labels)
-    #         recall(preds, labels)
+    ind_model.eval()
+    with torch.no_grad():
+        for images, labels in test_loader:
+            images = images.to(device)
+            labels = labels.to(device)
+            outputs = ind_model(images)
+            _, preds = torch.max(outputs, 1)
+            acc(preds, labels)
+            precision(preds, labels)
+            recall(preds, labels)
 
-    # test_accuracy = acc.compute()
-    # print(f"IndependentCNN test accuracy: {test_accuracy}")
-    # print(f"Baseline train time: {end - start:.3f}")
-    # ind_accuracies.append(test_accuracy)
+    test_accuracy = acc.compute()
+    print(f"IndependentCNN test accuracy: {test_accuracy}")
+    print(f"IndependentCNN train time: {end - start:.3f}")
+    ind_accuracies.append(test_accuracy)
 
 print(f"\nAverage baseline accuracy: {sum(baseline_accuracies) / num_runs}\nAverage baseline training time: {sum(baseline_times) / num_runs}")
 print(f"Best baseline accuracy: {max(baseline_accuracies)}")
 print(f"Worst baseline accuracy: {min(baseline_accuracies)}")
 
-# print(f"\nAverage dilated accuracy: {sum(dilated_accuracies) / num_runs}\nAverage dilated training time: {sum(dilated_times) / num_runs}")
-# print(f"Best dilated accuracy: {max(dilated_accuracies)}")
-# print(f"Worst dilated accuracy: {min(dilated_accuracies)}")
+print(f"\nAverage dilated accuracy: {sum(dilated_accuracies) / num_runs}\nAverage dilated training time: {sum(dilated_times) / num_runs}")
+print(f"Best dilated accuracy: {max(dilated_accuracies)}")
+print(f"Worst dilated accuracy: {min(dilated_accuracies)}")
 
-# print(f"\nAverage ind accuracy: {sum(ind_accuracies) / num_runs}\nAverage ind training time: {sum(ind_times) / num_runs}")
-# print(f"Best ind accuracy: {max(ind_accuracies)}")
-# print(f"Worst ind accuracy: {min(ind_accuracies)}")
+print(f"\nAverage ind accuracy: {sum(ind_accuracies) / num_runs}\nAverage ind training time: {sum(ind_times) / num_runs}")
+print(f"Best ind accuracy: {max(ind_accuracies)}")
+print(f"Worst ind accuracy: {min(ind_accuracies)}")
