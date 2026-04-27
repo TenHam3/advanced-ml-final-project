@@ -147,13 +147,15 @@ for i in range(num_runs):
     end = time.perf_counter()
     baseline_times.append(end - start)
 
-    acc = Accuracy(task="multiclass", num_classes=cfg["num_classes"])
-    precision = Precision(task="multiclass", average='macro', num_classes=cfg["num_classes"])
-    recall = Recall(task="multiclass", average='macro', num_classes=cfg["num_classes"])
+    acc = Accuracy(task="multiclass", num_classes=cfg["num_classes"]).to(device)
+    precision = Precision(task="multiclass", average='macro', num_classes=cfg["num_classes"]).to(device)
+    recall = Recall(task="multiclass", average='macro', num_classes=cfg["num_classes"]).to(device)
 
     baseline_model.eval()
     with torch.no_grad():
         for images, labels in test_loader:
+            images = images.to(device)
+            labels = labels.to(device)
             outputs = baseline_model(images)
             _, preds = torch.max(outputs, 1)
             acc(preds, labels)
