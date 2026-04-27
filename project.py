@@ -108,9 +108,9 @@ num_epochs = 50 if DATASET != "MNIST" else 10
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-baseline_accuracies, baseline_times = [], []
-dilated_accuracies, dilated_times = [], []
-ind_accuracies, ind_times = [], []
+baseline_accuracies, baseline_precision, baseline_recall, baseline_times = [], [], [], []
+dilated_accuracies, dilated_precision, dilated_recall, dilated_times = [], [], [], []
+ind_accuracies, ind_precision, ind_recall, ind_times = [], [], [], []
 
 for i in range(num_runs):
     print(f"Run {i+1}/{num_runs}:")
@@ -178,9 +178,15 @@ for i in range(num_runs):
             recall(preds, labels)
 
     test_accuracy = acc.compute()
+    test_precision = precision.compute()
+    test_recall = recall.compute()
     print(f"Baseline test accuracy: {test_accuracy}")
+    print(f"Baseline test precision: {test_precision}")
+    print(f"Baseline test recall: {test_recall}")
     print(f"Baseline train time: {end - start:.3f}")
     baseline_accuracies.append(test_accuracy)
+    baseline_precision.append(test_precision)
+    baseline_recall.append(test_recall)
 
     # ── TestCNN / DilatedResNetTest ───────────────────────────────────────────
     if DATASET == "MNIST":
@@ -236,9 +242,15 @@ for i in range(num_runs):
             recall(preds, labels)
 
     test_accuracy = acc.compute()
+    test_precision = precision.compute()
+    test_recall = recall.compute()
     print(f"TestCNN test accuracy: {test_accuracy}")
+    print(f"TestCNN test precision: {test_precision}")
+    print(f"TestCNN test recall: {test_recall}")
     print(f"TestCNN train time: {end - start:.3f}")
     dilated_accuracies.append(test_accuracy)
+    dilated_precision.append(test_precision)
+    dilated_recall.append(test_recall)
 
     # ── IndependentCNN / DilatedResNetIndependent ─────────────────────────────
     if DATASET == "MNIST":
@@ -294,18 +306,30 @@ for i in range(num_runs):
             recall(preds, labels)
 
     test_accuracy = acc.compute()
+    test_precision = precision.compute()
+    test_recall = recall.compute()
     print(f"IndependentCNN test accuracy: {test_accuracy}")
+    print(f"IndependentCNN test precision: {test_precision}")
+    print(f"IndependentCNN test recall: {test_recall}")
     print(f"IndependentCNN train time: {end - start:.3f}")
     ind_accuracies.append(test_accuracy)
+    ind_precision.append(test_precision)
+    ind_recall.append(test_recall)
 
 print(f"\nAverage baseline accuracy: {sum(baseline_accuracies) / num_runs}\nAverage baseline training time: {sum(baseline_times) / num_runs}")
+print(f"Average baseline precision: {sum(baseline_precision) / num_runs}")
+print(f"Average baseline recall: {sum(baseline_recall) / num_runs}")
 print(f"Best baseline accuracy: {max(baseline_accuracies)}")
 print(f"Worst baseline accuracy: {min(baseline_accuracies)}")
 
 print(f"\nAverage dilated accuracy: {sum(dilated_accuracies) / num_runs}\nAverage dilated training time: {sum(dilated_times) / num_runs}")
+print(f"Average dilated precision: {sum(dilated_precision) / num_runs}")
+print(f"Average dilated recall: {sum(dilated_recall) / num_runs}")
 print(f"Best dilated accuracy: {max(dilated_accuracies)}")
 print(f"Worst dilated accuracy: {min(dilated_accuracies)}")
 
 print(f"\nAverage ind accuracy: {sum(ind_accuracies) / num_runs}\nAverage ind training time: {sum(ind_times) / num_runs}")
+print(f"Average ind precision: {sum(ind_precision) / num_runs}")
+print(f"Average ind recall: {sum(ind_recall) / num_runs}")
 print(f"Best ind accuracy: {max(ind_accuracies)}")
 print(f"Worst ind accuracy: {min(ind_accuracies)}")
