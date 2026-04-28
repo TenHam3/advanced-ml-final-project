@@ -104,7 +104,7 @@ def get_loaders(cfg):
 
 batch_size = 50 if DATASET != "MNIST" else 10
 num_runs = 5
-num_epochs = 50 if DATASET != "MNIST" else 10
+num_epochs = 200 if DATASET != "MNIST" else 10
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -319,17 +319,11 @@ for i in range(num_runs):
 print(f"\nAverage baseline accuracy: {sum(baseline_accuracies) / num_runs}\nAverage baseline training time: {sum(baseline_times) / num_runs}")
 print(f"Average baseline precision: {sum(baseline_precision) / num_runs}")
 print(f"Average baseline recall: {sum(baseline_recall) / num_runs}")
-print(f"Best baseline accuracy: {max(baseline_accuracies)}")
-print(f"Worst baseline accuracy: {min(baseline_accuracies)}")
 
 print(f"\nAverage dilated accuracy: {sum(dilated_accuracies) / num_runs}\nAverage dilated training time: {sum(dilated_times) / num_runs}")
 print(f"Average dilated precision: {sum(dilated_precision) / num_runs}")
 print(f"Average dilated recall: {sum(dilated_recall) / num_runs}")
-print(f"Best dilated accuracy: {max(dilated_accuracies)}")
-print(f"Worst dilated accuracy: {min(dilated_accuracies)}")
 
 print(f"\nAverage ind accuracy: {sum(ind_accuracies) / num_runs}\nAverage ind training time: {sum(ind_times) / num_runs}")
 print(f"Average ind precision: {sum(ind_precision) / num_runs}")
 print(f"Average ind recall: {sum(ind_recall) / num_runs}")
-print(f"Best ind accuracy: {max(ind_accuracies)}")
-print(f"Worst ind accuracy: {min(ind_accuracies)}")
