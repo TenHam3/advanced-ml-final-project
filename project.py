@@ -184,7 +184,7 @@ for i in range(num_runs):
     for epoch in range(num_epochs):
         baseline_model.train()
         print(f"Epoch [{epoch + 1}/{num_epochs}]")
-        epoch_loss = 0.0
+        epoch_loss = torch.tensor(0.0, device=device)
         for batch_index, (data, targets) in enumerate(tqdm(train_loader)):
             data = data.to(device)
             targets = targets.to(device)
@@ -193,8 +193,8 @@ for i in range(num_runs):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            epoch_loss += loss.item()
-        run_losses.append(epoch_loss / len(train_loader))
+            epoch_loss += loss.detach()
+        run_losses.append((epoch_loss / len(train_loader)).item())
         if scheduler is not None:
             scheduler.step()
     baseline_losses_all.append(run_losses)
@@ -271,7 +271,7 @@ for i in range(num_runs):
     for epoch in range(num_epochs):
         dilated_model.train()
         print(f"Epoch [{epoch + 1}/{num_epochs}]")
-        epoch_loss = 0.0
+        epoch_loss = torch.tensor(0.0, device=device)
         for batch_index, (data, targets) in enumerate(tqdm(train_loader)):
             data = data.to(device)
             targets = targets.to(device)
@@ -280,8 +280,8 @@ for i in range(num_runs):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            epoch_loss += loss.item()
-        run_losses.append(epoch_loss / len(train_loader))
+            epoch_loss += loss.detach()
+        run_losses.append((epoch_loss / len(train_loader)).item())
         if scheduler is not None:
             scheduler.step()
     dilated_losses_all.append(run_losses)
