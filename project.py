@@ -131,7 +131,7 @@ def get_loaders(cfg):
 
 batch_size = 50 if DATASET != "MNIST" else 10
 num_runs = 1 if DATASET != "MNIST" else 5
-num_epochs = 100 if DATASET != "MNIST" else 10
+num_epochs = 50 if DATASET != "MNIST" else 10
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -264,9 +264,9 @@ for i in range(num_runs):
           scheduler = None
     else:
         optimizer = optim.Adam([
-              {"params": kernel_params, "lr": 0.0005},
+              {"params": kernel_params, "lr": 0.001},
               {"params": alpha_params,  "lr": 0.01},
-              ], lr=0.001, weight_decay=5e-4)
+              ], weight_decay=5e-4)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
     start = time.perf_counter()
