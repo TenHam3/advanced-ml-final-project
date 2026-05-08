@@ -254,16 +254,19 @@ for i in range(num_runs):
         n_params = sum(p.numel() for p in dilated_model.parameters())
         print(f"Dilated parameters: {n_params:,}")
 
+    alpha_params = [p for name, p in dilated_model.named_parameters() if "alpha" in name]
+    kernel_params = [p for name, p in dilated_model.named_parameters() if "alpha" not in name]
     if DATASET == "MNIST":
-          alpha_params = [p for name, p in dilated_model.named_parameters() if "alpha" in name]
-          kernel_params = [p for name, p in dilated_model.named_parameters() if "alpha" not in name]
           optimizer = optim.Adam([
               {"params": kernel_params, "lr": 0.0005},
               {"params": alpha_params,  "lr": 0.01},
               ])
           scheduler = None
     else:
-        optimizer = optim.Adam(dilated_model.parameters(), lr=0.001, weight_decay=5e-4)
+        optimizer = optim.Adam([
+              {"params": kernel_params, "lr": 0.0005},
+              {"params": alpha_params,  "lr": 0.01},
+              ], lr=0.001, weight_decay=5e-4)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
     start = time.perf_counter()
