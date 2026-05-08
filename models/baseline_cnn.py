@@ -48,9 +48,9 @@ class BaselineCNN(nn.Module):
            torch.Tensor
                The output tensor after passing through the network.
        """
-       x = F.relu(self.bn1(self.conv1(x) + self.shortcut1(x)))  # Apply first convolution and ReLU activation
+       x = F.relu(self.conv1(x))  # Apply first convolution and ReLU activation
        x = self.maxpool(x)           # Apply max pooling
-       x = F.relu(self.bn2(self.conv2(x) + self.shortcut2(x)))  # Apply second convolution and ReLU activation
+       x = F.relu(self.conv2(x))  # Apply second convolution and ReLU activation
        x = self.maxpool(x)           # Apply max pooling
     #    x = F.relu(self.bn3(self.conv3(x) + self.shortcut3(x)))  # Apply second convolution and ReLU activation
     #    x = self.maxpool(x)           # Apply max pooling

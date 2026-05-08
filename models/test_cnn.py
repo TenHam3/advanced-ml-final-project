@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class MultiDilatedConv(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, dilations=(1, 2, 4)):
+    def __init__(self, in_channels, out_channels, kernel_size, dilations=(1, 2, 5)):
         super().__init__()
         self.dilations = dilations
         self.kernel_size = kernel_size
@@ -13,14 +13,17 @@ class MultiDilatedConv(nn.Module):
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size)
 
         # Per-output-channel mixing weights over dilations (shape: out_channels x num_dilations)
-        self.alpha = nn.Parameter(torch.zeros(out_channels, len(dilations)))
+        # self.alpha = nn.Parameter(torch.zeros(out_channels, len(dilations)))
+        init = torch.zeros(out_channels, len(dilations))
+        # init[:, 0] = 3.0
+        self.alpha = nn.Parameter(init)
 
         # 1x1 projection to match channels on the skip path when in != out
-        self.shortcut = (
-            nn.Conv2d(in_channels, out_channels, kernel_size=1)
-            if in_channels != out_channels
-            else nn.Identity()
-        )
+        # self.shortcut = (
+        #     nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        #     if in_channels != out_channels
+        #     else nn.Identity()
+        # )
 
     def forward(self, x):
         outputs = []
@@ -37,7 +40,7 @@ class MultiDilatedConv(nn.Module):
         stacked = torch.stack(outputs, dim=2)          # [B, C, num_dilations, H, W]
         weights = F.softmax(self.alpha, dim=1)          # softmax over dilations, per channel
         weights = weights.view(1, -1, len(self.dilations), 1, 1)
-        return (stacked * weights).sum(dim=2) + self.shortcut(x)
+        return (stacked * weights).sum(dim=2)
 
 
 class TestCNN(nn.Module):
@@ -46,11 +49,11 @@ class TestCNN(nn.Module):
 
         self.layer1 = MultiDilatedConv(in_channels=in_channels, out_channels=8, kernel_size=3)
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.bn1 = nn.BatchNorm2d(8) # num_features matches output channels
+        # self.bn1 = nn.BatchNorm2d(8) # num_features matches output channels
         
         # Fully connected layer — size depends on image dimensions after 2x MaxPool (each halves H and W)
         self.layer2 = MultiDilatedConv(in_channels=8, out_channels=16, kernel_size=3)
-        self.bn2 = nn.BatchNorm2d(16)
+        # self.bn2 = nn.BatchNorm2d(16)
 
         # self.layer3 = MultiDilatedConv(in_channels=16, out_channels=16, kernel_size=3)
         # self.bn3 = nn.BatchNorm2d(16)
@@ -62,9 +65,9 @@ class TestCNN(nn.Module):
         self.fc1 = nn.Linear(fc_input_size, num_classes)
 
     def forward(self, x):
-        x = F.relu(self.bn1(self.layer1(x)))
+        x = F.relu(self.layer1(x))
         x = self.maxpool(x)
-        x = F.relu(self.bn2(self.layer2(x)))
+        x = F.relu(self.layer2(x))
         x = self.maxpool(x)
         # x = F.relu(self.bn3(self.layer3(x)))
         # x = self.maxpool(x)

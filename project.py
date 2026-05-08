@@ -26,7 +26,7 @@ from models.dilated_resnet_independent import DilatedResNetIndependent
 import time
 
 # ─── Dataset selection ──────────────────────────────────────────────────────
-DATASET = "CIFAR10"  # Options: "MNIST", "CIFAR10", "STL10"
+DATASET = "MNIST"  # Options: "MNIST", "CIFAR10", "STL10"
 
 DATASET_CONFIGS = {
     "MNIST": {
@@ -60,7 +60,7 @@ DATASET_CONFIGS = {
                                transforms.Normalize((0.4914, 0.4822, 0.4465),
                                                     (0.2023, 0.1994, 0.2010)),
                            ]),
-        "train_subset":    5000,
+        "train_subset":    10000,
         "test_subset":     1000,
     },
     "STL10": {
@@ -82,7 +82,7 @@ DATASET_CONFIGS = {
                                transforms.Normalize((0.4467, 0.4398, 0.4066),
                                                     (0.2603, 0.2566, 0.2713)),
                            ]),
-        "train_subset":    5000,
+        "train_subset":    10000,
         "test_subset":     1000,
     },
 }
@@ -104,7 +104,7 @@ def get_loaders(cfg):
 
 batch_size = 50 if DATASET != "MNIST" else 10
 num_runs = 5
-num_epochs = 200 if DATASET != "MNIST" else 10
+num_epochs = 100 if DATASET != "MNIST" else 10
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -142,7 +142,7 @@ for i in range(num_runs):
         optimizer = optim.Adam(baseline_model.parameters(), lr=0.0005)
         scheduler = None
     else:
-        optimizer = optim.Adam(baseline_model.parameters(), lr=0.001)
+        optimizer = optim.Adam(baseline_model.parameters(), lr=0.001, weight_decay=5e-4)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
     start = time.perf_counter()
@@ -203,10 +203,15 @@ for i in range(num_runs):
         ).to(device)
 
     if DATASET == "MNIST":
-        optimizer = optim.Adam(dilated_model.parameters(), lr=0.0005)
-        scheduler = None
+          alpha_params = [p for name, p in dilated_model.named_parameters() if "alpha" in name]
+          kernel_params = [p for name, p in dilated_model.named_parameters() if "alpha" not in name]
+          optimizer = optim.Adam([
+              {"params": kernel_params, "lr": 0.0005},
+              {"params": alpha_params,  "lr": 0.01},
+              ])
+          scheduler = None
     else:
-        optimizer = optim.Adam(dilated_model.parameters(), lr=0.001)
+        optimizer = optim.Adam(dilated_model.parameters(), lr=0.001, weight_decay=5e-4)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
     start = time.perf_counter()
@@ -253,68 +258,68 @@ for i in range(num_runs):
     dilated_recall.append(test_recall)
 
     # ── IndependentCNN / DilatedResNetIndependent ─────────────────────────────
-    if DATASET == "MNIST":
-        ind_model = IndependentCNN(
-            in_channels=cfg["in_channels"],
-            num_classes=cfg["num_classes"],
-            img_size=cfg["img_size"],
-        ).to(device)
-    else:
-        ind_model = DilatedResNetIndependent(
-            in_channels=cfg["in_channels"],
-            num_classes=cfg["num_classes"],
-            img_size=cfg["img_size"],
-        ).to(device)
+    # if DATASET == "MNIST":
+    #     ind_model = IndependentCNN(
+    #         in_channels=cfg["in_channels"],
+    #         num_classes=cfg["num_classes"],
+    #         img_size=cfg["img_size"],
+    #     ).to(device)
+    # else:
+    #     ind_model = DilatedResNetIndependent(
+    #         in_channels=cfg["in_channels"],
+    #         num_classes=cfg["num_classes"],
+    #         img_size=cfg["img_size"],
+    #     ).to(device)
 
-    if DATASET == "MNIST":
-        optimizer = optim.Adam(ind_model.parameters(), lr=0.0005)
-        scheduler = None
-    else:
-        optimizer = optim.Adam(ind_model.parameters(), lr=0.001)
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
+    # if DATASET == "MNIST":
+    #     optimizer = optim.Adam(ind_model.parameters(), lr=0.0005)
+    #     scheduler = None
+    # else:
+    #     optimizer = optim.Adam(ind_model.parameters(), lr=0.001)
+    #     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
-    start = time.perf_counter()
-    for epoch in range(num_epochs):
-        ind_model.train()
-        print(f"Epoch [{epoch + 1}/{num_epochs}]")
-        for batch_index, (data, targets) in enumerate(tqdm(train_loader)):
-            data = data.to(device)
-            targets = targets.to(device)
-            scores = ind_model(data)
-            loss = criterion(scores, targets)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-        if scheduler is not None:
-            scheduler.step()
-    end = time.perf_counter()
-    ind_times.append(end - start)
+    # start = time.perf_counter()
+    # for epoch in range(num_epochs):
+    #     ind_model.train()
+    #     print(f"Epoch [{epoch + 1}/{num_epochs}]")
+    #     for batch_index, (data, targets) in enumerate(tqdm(train_loader)):
+    #         data = data.to(device)
+    #         targets = targets.to(device)
+    #         scores = ind_model(data)
+    #         loss = criterion(scores, targets)
+    #         optimizer.zero_grad()
+    #         loss.backward()
+    #         optimizer.step()
+    #     if scheduler is not None:
+    #         scheduler.step()
+    # end = time.perf_counter()
+    # ind_times.append(end - start)
 
-    acc = Accuracy(task="multiclass", num_classes=cfg["num_classes"]).to(device)
-    precision = Precision(task="multiclass", average='macro', num_classes=cfg["num_classes"]).to(device)
-    recall = Recall(task="multiclass", average='macro', num_classes=cfg["num_classes"]).to(device)
+    # acc = Accuracy(task="multiclass", num_classes=cfg["num_classes"]).to(device)
+    # precision = Precision(task="multiclass", average='macro', num_classes=cfg["num_classes"]).to(device)
+    # recall = Recall(task="multiclass", average='macro', num_classes=cfg["num_classes"]).to(device)
 
-    ind_model.eval()
-    with torch.no_grad():
-        for images, labels in test_loader:
-            images = images.to(device)
-            labels = labels.to(device)
-            outputs = ind_model(images)
-            _, preds = torch.max(outputs, 1)
-            acc(preds, labels)
-            precision(preds, labels)
-            recall(preds, labels)
+    # ind_model.eval()
+    # with torch.no_grad():
+    #     for images, labels in test_loader:
+    #         images = images.to(device)
+    #         labels = labels.to(device)
+    #         outputs = ind_model(images)
+    #         _, preds = torch.max(outputs, 1)
+    #         acc(preds, labels)
+    #         precision(preds, labels)
+    #         recall(preds, labels)
 
-    test_accuracy = acc.compute()
-    test_precision = precision.compute()
-    test_recall = recall.compute()
-    print(f"IndependentCNN test accuracy: {test_accuracy}")
-    print(f"IndependentCNN test precision: {test_precision}")
-    print(f"IndependentCNN test recall: {test_recall}")
-    print(f"IndependentCNN train time: {end - start:.3f}")
-    ind_accuracies.append(test_accuracy)
-    ind_precision.append(test_precision)
-    ind_recall.append(test_recall)
+    # test_accuracy = acc.compute()
+    # test_precision = precision.compute()
+    # test_recall = recall.compute()
+    # print(f"IndependentCNN test accuracy: {test_accuracy}")
+    # print(f"IndependentCNN test precision: {test_precision}")
+    # print(f"IndependentCNN test recall: {test_recall}")
+    # print(f"IndependentCNN train time: {end - start:.3f}")
+    # ind_accuracies.append(test_accuracy)
+    # ind_precision.append(test_precision)
+    # ind_recall.append(test_recall)
 
 print(f"\nAverage baseline accuracy: {sum(baseline_accuracies) / num_runs}\nAverage baseline training time: {sum(baseline_times) / num_runs}")
 print(f"Average baseline precision: {sum(baseline_precision) / num_runs}")
@@ -324,6 +329,6 @@ print(f"\nAverage dilated accuracy: {sum(dilated_accuracies) / num_runs}\nAverag
 print(f"Average dilated precision: {sum(dilated_precision) / num_runs}")
 print(f"Average dilated recall: {sum(dilated_recall) / num_runs}")
 
-print(f"\nAverage ind accuracy: {sum(ind_accuracies) / num_runs}\nAverage ind training time: {sum(ind_times) / num_runs}")
-print(f"Average ind precision: {sum(ind_precision) / num_runs}")
-print(f"Average ind recall: {sum(ind_recall) / num_runs}")
+# print(f"\nAverage ind accuracy: {sum(ind_accuracies) / num_runs}\nAverage ind training time: {sum(ind_times) / num_runs}")
+# print(f"Average ind precision: {sum(ind_precision) / num_runs}")
+# print(f"Average ind recall: {sum(ind_recall) / num_runs}")

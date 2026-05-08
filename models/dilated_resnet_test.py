@@ -10,7 +10,7 @@ class _MultiDilatedConv(nn.Module):
     which provides its own residual shortcut.
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size, dilations=(1, 2, 4)):
+    def __init__(self, in_channels, out_channels, kernel_size, dilations=(1, 2, 5)):
         super().__init__()
         self.dilations = dilations
         self.kernel_size = kernel_size
