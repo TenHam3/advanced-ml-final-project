@@ -16,12 +16,12 @@ class BaselineCNN(nn.Module):
 
        # 1st convolutional layer
        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=8, kernel_size=3, padding=1)
-       self.bn1 = nn.BatchNorm2d(8)
+       # self.bn1 = nn.BatchNorm2d(8)
        # Max pooling layer
        self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
        # 2nd convolutional layer
        self.conv2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1)
-       self.bn2 = nn.BatchNorm2d(16)
+       # self.bn2 = nn.BatchNorm2d(16)
 
     #    self.conv3 = nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, padding=1)
     #    self.bn3 = nn.BatchNorm2d(16)
@@ -30,10 +30,10 @@ class BaselineCNN(nn.Module):
        self.fc1 = nn.Linear(fc_input_size, num_classes)
 
        # 1x1 projection to match channels on the skip path when in != out
-       self.shortcut1 = nn.Conv2d(in_channels=in_channels, out_channels=8, kernel_size=1)
+       # self.shortcut1 = nn.Conv2d(in_channels=in_channels, out_channels=8, kernel_size=1)
        
        # 1x1 projection to match channels on the skip path when in != out
-       self.shortcut2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=1)
+       # self.shortcut2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=1)
 
        # self.shortcut3 = nn.Identity()
 
