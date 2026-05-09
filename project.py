@@ -361,8 +361,8 @@ plt.savefig(f"loss_curve_{DATASET}.png")
 
 class_names = CLASS_NAMES[DATASET]
 plot_confusion_matrix(baseline_cm_sum, class_names,
-                      f"Baseline Confusion Matrix — {DATASET} ({num_runs} runs)",
+                      f"Baseline Confusion Matrix — {DATASET})",
                       f"cm_baseline_{DATASET}.png")
 plot_confusion_matrix(dilated_cm_sum, class_names,
-                      f"Dilated Confusion Matrix — {DATASET} ({num_runs} runs)",
+                      f"Dilated Confusion Matrix — {DATASET})",
                       f"cm_dilated_{DATASET}.png")
