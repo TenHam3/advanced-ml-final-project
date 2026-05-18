@@ -19,7 +19,6 @@ class _MultiDilatedConv(nn.Module):
         # standard conv behavior. The model learns to activate larger dilations when useful
         # rather than averaging noisy dilation outputs from the first step.
         init = torch.zeros(out_channels, len(dilations))
-        init[:, 0] = 2.0
         self.alpha = nn.Parameter(init)
 
     def forward(self, x):

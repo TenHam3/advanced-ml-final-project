@@ -61,7 +61,7 @@ DATASET_CONFIGS = {
                                                     (0.2023, 0.1994, 0.2010)),
                            ]),
         "train_subset":    10000,
-        "test_subset":     1000,
+        "test_subset":     5000,
     },
     "STL10": {
         "class":           datasets.STL10,
@@ -83,7 +83,7 @@ DATASET_CONFIGS = {
                                                     (0.2603, 0.2566, 0.2713)),
                            ]),
         "train_subset":    10000,
-        "test_subset":     1000,
+        "test_subset":     5000,
     },
 }
 # ────────────────────────────────────────────────────────────────────────────
